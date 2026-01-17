@@ -47,8 +47,8 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    invite_window_start = _get_int("INVITE_WINDOW_START", 10)
-    invite_window_end = _get_int("INVITE_WINDOW_END", 17)
+    invite_window_start = _get_int("INVITE_WINDOW_START", 12)
+    invite_window_end = _get_int("INVITE_WINDOW_END", 19)
     if invite_window_start < 0 or invite_window_start > 23:
         raise ValueError("INVITE_WINDOW_START must be 0..23")
     if invite_window_end < 0 or invite_window_end > 24:
