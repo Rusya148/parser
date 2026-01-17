@@ -56,8 +56,8 @@ class InviterService:
                 await asyncio.sleep(sleep_seconds)
                 continue
 
-            await self._invite_for_current_hour(chat, now)
-            await asyncio.sleep(30)
+            sleep_seconds = await self._invite_for_current_hour(chat, now)
+            await asyncio.sleep(sleep_seconds)
 
     def _is_within_window(self, current: datetime) -> bool:
         return self.window_start <= current.hour < self.window_end
@@ -74,22 +74,34 @@ class InviterService:
             )
         return max(1, int((start - current).total_seconds()))
 
-    async def _invite_for_current_hour(self, chat, now: datetime) -> None:
+    async def _invite_for_current_hour(self, chat, now: datetime) -> int:
         hour_start = now.replace(minute=0, second=0, microsecond=0)
         hour_end = hour_start + timedelta(hours=1)
+        slot_seconds = int(3600 / max(1, self.invites_per_hour))
 
         async with self.sessionmaker() as session:
             already_invited = await session.scalar(
                 select(func.count(InvitedUser.id)).where(
                     InvitedUser.invited_at >= hour_start,
                     InvitedUser.invited_at < hour_end,
-                    InvitedUser.status == "invited",
                 )
             )
             remaining = self.invites_per_hour - int(already_invited or 0)
             if remaining <= 0:
-                self.logger.info("Hourly limit reached. Waiting for next hour.")
-                return
+                next_hour = hour_end
+                wait_seconds = max(1, int((next_hour - now).total_seconds()))
+                self.logger.info("Hourly limit reached. Waiting %s seconds.", wait_seconds)
+                return wait_seconds
+
+            next_slot_time = hour_start + timedelta(
+                seconds=slot_seconds * int(already_invited or 0)
+            )
+            if now < next_slot_time:
+                wait_seconds = max(1, int((next_slot_time - now).total_seconds()))
+                self.logger.info(
+                    "Waiting for next slot in %s seconds.", wait_seconds
+                )
+                return wait_seconds
 
             candidates = await session.execute(
                 select(ActiveUser)
@@ -98,17 +110,23 @@ class InviterService:
                 )
                 .where(InvitedUser.username.is_(None))
                 .order_by(ActiveUser.created_at.asc())
-                .limit(remaining)
+                .limit(1)
             )
             users = list(candidates.scalars().all())
 
         if not users:
             self.logger.info("No candidates to invite.")
-            return
+            return 60
 
         for user in users:
             await self._invite_single(chat, user)
+            break
 
+        next_slot_time = hour_start + timedelta(
+            seconds=slot_seconds * (int(already_invited or 0) + 1)
+        )
+        wait_seconds = max(1, int((next_slot_time - datetime.now(self.timezone)).total_seconds()))
+        return wait_seconds
     async def _invite_single(self, chat, user: ActiveUser) -> None:
         username = user.username.lstrip("@")
         status = "invited"
