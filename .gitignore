@@ -13,5 +13,4 @@ htmlcov/
 venv/
 env/
 sessions/
-postgres_data/
 .DS_Store

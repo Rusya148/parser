@@ -35,6 +35,16 @@ ANALYSIS_DAYS=7
 MIN_MESSAGES=100
 ```
 
+Для инвайтера:
+
+```
+INVITE_TARGET_CHAT=
+INVITES_PER_HOUR=2
+INVITE_WINDOW_START=10
+INVITE_WINDOW_END=17
+INVITE_TIMEZONE=UTC
+```
+
 ## Запуск через Docker Compose
 
 1. Создайте файл `.env` в корне проекта и заполните переменные окружения.
@@ -72,6 +82,7 @@ docker compose up --build
 ├── main.py
 ├── requirements.txt
 ├── Dockerfile
+├── docker-compose.inviter.yml
 └── docker-compose.yml
 ```
 
@@ -89,3 +100,23 @@ PostgreSQL хранит данные в папке `./postgres_data` (bind‑vol
 - `first_name`
 
 Если раньше была таблица `active_user_stats`, её можно удалить вручную.
+
+## Инвайтер
+
+Инвайтер запускается отдельным compose и читает пользователей из таблицы
+`active_users`, приглашая их в `INVITE_TARGET_CHAT`.
+
+Перед запуском убедитесь, что основная сеть `telegram_default` создана
+(она появляется после `docker compose up -d` основного проекта).
+
+Запуск:
+
+```
+docker compose -f docker-compose.inviter.yml up -d --build
+```
+
+Логи:
+
+```
+docker compose -f docker-compose.inviter.yml logs -f inviter
+```

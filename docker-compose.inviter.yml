@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  inviter:
+    build:
+      context: ./inviter
+    env_file:
+      - .env
+    volumes:
+      - ./sessions:/app/sessions
+    networks:
+      - telegram_default
+
+networks:
+  telegram_default:
+    external: true
