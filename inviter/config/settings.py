@@ -37,6 +37,7 @@ class Settings:
     invite_window_start: int
     invite_window_end: int
     invite_timezone: ZoneInfo
+    invite_immediate_on_start: bool
 
     @property
     def database_url(self) -> str:
@@ -70,4 +71,6 @@ def load_settings() -> Settings:
         invite_window_start=invite_window_start,
         invite_window_end=invite_window_end,
         invite_timezone=_get_timezone("INVITE_TIMEZONE", "UTC"),
+        invite_immediate_on_start=os.getenv("INVITE_IMMEDIATE_ON_START", "true").lower()
+        in {"1", "true", "yes", "y"},
     )

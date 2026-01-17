@@ -9,8 +9,8 @@ services:
     volumes:
       - ./sessions:/app/sessions
     networks:
-      - telegram_default
+      - parser_default
 
 networks:
-  telegram_default:
+  parser_default:
     external: true

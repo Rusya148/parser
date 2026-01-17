@@ -37,6 +37,7 @@ async def main() -> None:
             window_start=settings.invite_window_start,
             window_end=settings.invite_window_end,
             timezone=settings.invite_timezone,
+            invite_immediate_on_start=settings.invite_immediate_on_start,
             logger=logger,
         )
         await inviter.run()

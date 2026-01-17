@@ -29,6 +29,7 @@ class InviterService:
         window_start: int,
         window_end: int,
         timezone,
+        invite_immediate_on_start: bool,
         logger: logging.Logger,
     ) -> None:
         self.client = client
@@ -38,6 +39,7 @@ class InviterService:
         self.window_start = window_start
         self.window_end = window_end
         self.timezone = timezone
+        self.invite_immediate_on_start = invite_immediate_on_start
         self.logger = logger
 
     async def run(self) -> None:
@@ -45,6 +47,9 @@ class InviterService:
         if not isinstance(chat, Channel):
             raise RuntimeError("INVITE_TARGET_CHAT must be a channel or megagroup")
         self.logger.info("Inviter target channel resolved: %s", self.target_chat)
+
+        if self.invite_immediate_on_start:
+            await self._invite_first_candidate(chat)
 
         while True:
             now = datetime.now(self.timezone)
@@ -127,6 +132,26 @@ class InviterService:
         )
         wait_seconds = max(1, int((next_slot_time - datetime.now(self.timezone)).total_seconds()))
         return wait_seconds
+
+    async def _invite_first_candidate(self, chat) -> None:
+        async with self.sessionmaker() as session:
+            candidates = await session.execute(
+                select(ActiveUser)
+                .outerjoin(
+                    InvitedUser, InvitedUser.username == ActiveUser.username
+                )
+                .where(InvitedUser.username.is_(None))
+                .order_by(ActiveUser.created_at.asc())
+                .limit(1)
+            )
+            user = candidates.scalars().first()
+
+        if not user:
+            self.logger.info("No candidates to invite on start.")
+            return
+
+        self.logger.info("Inviting first candidate on start: %s", user.username)
+        await self._invite_single(chat, user)
     async def _invite_single(self, chat, user: ActiveUser) -> None:
         username = user.username.lstrip("@")
         status = "invited"
