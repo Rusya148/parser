@@ -16,7 +16,7 @@ from telethon.errors import (
 from telethon.tl.functions.channels import InviteToChannelRequest
 from telethon.tl.types import Channel, User
 
-from inviter.db.models import ActiveUser, InvitedUser
+from db.models import ActiveUser, InvitedUser
 
 
 class InviterService:

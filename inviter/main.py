@@ -4,9 +4,9 @@ import os
 
 from telethon import TelegramClient
 
-from inviter.config.settings import load_settings
-from inviter.db.session import create_engine, create_sessionmaker, init_db
-from inviter.service import InviterService
+from config.settings import load_settings
+from db.session import create_engine, create_sessionmaker, init_db
+from service import InviterService
 
 
 def setup_logging() -> logging.Logger:

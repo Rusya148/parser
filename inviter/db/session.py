@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from inviter.db.base import Base
+from db.base import Base
 
 
 def create_engine(database_url: str) -> AsyncEngine:
